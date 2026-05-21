@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  scripts   Script[]
+}
+
+model Script {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id])
+  title            String
+  mission          String?
+  status           Status   @default(draft)
+
+  // Hook
+  hookTitle        String?
+  hookVisual       String?
+  hookVerbal       String?
+
+  // Storytelling Framework
+  storyProblem     String?
+  storyPromise     String?
+  storyCredibility String?
+  storyDelivery    String?
+  storyCta         String?
+
+  // Production
+  footageNeeded    String?
+  audio            String?
+  caption          String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum Status {
+  draft
+  ready
+  posted
+}
