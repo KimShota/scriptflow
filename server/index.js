@@ -3,6 +3,8 @@ const cors = require('cors');
 require('dotenv').config();
 const prisma = require('./prisma/client'); 
 const scriptRoutes = require('./routes/scripts'); 
+const authRoutes = require('./routes/auth'); 
+const authMiddleware = require('./middleware/auth'); 
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -10,7 +12,10 @@ const PORT = process.env.PORT || 8080;
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
-app.use('/api/scripts', scriptRoutes); 
+app.use('/api/auth', authRoutes); 
+
+// protect routes with jwt authentication
+app.use('/api/scripts', authMiddleware, scriptRoutes); 
 
 app.get('/', (req, res) => {
   res.json({ message: 'ScriptFlow API is running' });

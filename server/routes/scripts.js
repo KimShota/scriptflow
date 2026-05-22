@@ -6,6 +6,7 @@ const prisma = require('../prisma/client');
 router.get('/', async (req, res) => {
     try{
         const scripts = await prisma.script.findMany({
+            where: { userId: req.userId },
             orderBy: { createdAt: 'desc'}
         }); 
         res.json(scripts); 
@@ -51,7 +52,7 @@ router.post('/', async (req, res) => {
 
         const script = await prisma.script.create({
             data: {
-                userId: 1, // hardcoded for now but will use real one later
+                userId: req.userId,
                 title, 
                 mission, 
                 status, 
