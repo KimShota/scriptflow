@@ -31,6 +31,7 @@ export default function ScriptEditor(){
   const [saved, setSaved] = useState(false); 
   const [error, setError] = useState(''); 
   const [toast, setToast] = useState(null); 
+  const [correcting, setCorrecting] = useState(false); 
 
   // render the corresponding script 
   useEffect(() => {
@@ -118,6 +119,74 @@ export default function ScriptEditor(){
     })
   }, [form]); 
 
+  // function to correct grammar with gemini api
+  const handleCorrectGrammar = async () => {
+    const allContent = [
+      form.mission,
+      form.caption,
+      form.hookTitle,
+      form.hookVisual,
+      form.hookVerbal,
+      form.storyProblem,
+      form.storyPromise,
+      form.storyCredibility,
+      form.storyDelivery,
+      form.storyCta,
+      form.footageNeeded,
+      form.audio
+    ].filter(Boolean).join('\n\n---\n\n')
+
+    if (!allContent.trim()) {
+      setToast({ message: 'No content to correct yet', type: 'error' })
+      return
+    }
+
+    setCorrecting(true)
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/gemini/correct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: allContent,
+          fields: {
+            mission: form.mission,
+            caption: form.caption,
+            hookTitle: form.hookTitle,
+            hookVisual: form.hookVisual,
+            hookVerbal: form.hookVerbal,
+            storyProblem: form.storyProblem,
+            storyPromise: form.storyPromise,
+            storyCredibility: form.storyCredibility,
+            storyDelivery: form.storyDelivery,
+            storyCta: form.storyCta,
+            footageNeeded: form.footageNeeded,
+            audio: form.audio
+          }
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setToast({ message: data.error || 'Failed to correct grammar', type: 'error' })
+        return
+      }
+
+      // update form with corrected fields
+      setForm(prev => ({ ...prev, ...data.correctedFields }))
+      setSaved(false)
+      setToast({ message: 'Grammar corrected — review and save when ready', type: 'success' })
+    } catch (err) {
+      setToast({ message: 'Something went wrong', type: 'error' })
+    } finally {
+      setCorrecting(false)
+    }
+  }
+  
   // render this if loading
   if (loading) {
     return (
@@ -382,18 +451,29 @@ export default function ScriptEditor(){
             >
               Cancel
             </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-black text-white px-8 py-2 rounded font-semibold text-sm hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-sm">
-                {saved ? 'check' : saving ? 'progress_activity' : 'save'}
-              </span>
-              {saved ? 'Saved' : saving ? 'Saving...' : 'Save Script'}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCorrectGrammar}
+                disabled={correcting}
+                className="border border-black text-black px-6 py-2 rounded font-semibold text-sm hover:bg-black hover:text-white transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {correcting ? 'progress_activity' : 'auto_fix_high'}
+                </span>
+                {correcting ? 'Correcting...' : 'Correct Grammar'}
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-black text-white px-8 py-2 rounded font-semibold text-sm hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {saved ? 'check' : saving ? 'progress_activity' : 'save'}
+                </span>
+                {saved ? 'Saved' : saving ? 'Saving...' : 'Save Script'}
+              </button>
+            </div>
           </div>
-
         </div>
       </main>
       {toast && (

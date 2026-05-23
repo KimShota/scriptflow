@@ -5,6 +5,8 @@ const prisma = require('./prisma/client');
 const scriptRoutes = require('./routes/scripts'); 
 const authRoutes = require('./routes/auth'); 
 const authMiddleware = require('./middleware/auth'); 
+const geminiRoutes = require('./routes/gemini')
+app.use('/api/gemini', geminiRoutes)
 
 const app = express();
 const PORT = process.env.PORT || 8080;
