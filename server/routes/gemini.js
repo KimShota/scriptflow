@@ -13,7 +13,7 @@ router.post('/correct', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'No content provided' })
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' })
 
     // filter out empty fields
     const nonEmptyFields = Object.entries(fields).filter(([key, value]) => value && value.trim() !== '')
