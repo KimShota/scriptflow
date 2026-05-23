@@ -20,7 +20,7 @@ export default function Dashboard(){
   const fetchScripts = async () => {
     try {
       // send http request with jwt token to scripts endpoint 
-      const res = await fetch('http://localhost:8080/api/scripts', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scripts`, {
         headers: { Authorization: `Bearer ${token}` }
       }); 
       // get scripts data
@@ -43,7 +43,7 @@ export default function Dashboard(){
     }
     try {
       // send HTTP request to DELETE endpoint with jwt token 
-      await fetch(`http://localhost:8080/api/scripts/${id}`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/scripts/${id}`, {
         method: 'DELETE', 
         headers: { Authorization: `Bearer ${token}` }
       }); 

@@ -44,7 +44,7 @@ export default function ScriptEditor(){
     setLoading(true); 
     try {
       // send http reques to GET endpoint to get the script 
-      const res = await fetch(`http://localhost:8080/api/scripts/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scripts/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       }); 
       const data = await res.json(); 
@@ -77,8 +77,8 @@ export default function ScriptEditor(){
     try {
       // set URL according to situation
       const url = isEditing
-        ? `http://localhost:8080/api/scripts/${id}`
-        : 'http://localhost:8080/api/scripts'
+        ? `${import.meta.env.VITE_API_URL}/api/scripts/${id}`
+        : `${import.meta.env.VITE_API_URL}/api/scripts`
       
       // send http request to corresponding endpoint
       const res = await fetch(url, {
