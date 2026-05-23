@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; 
+import Toast from '../components/Toast';
 
 export default function Dashboard(){
   const navigate = useNavigate(); 
@@ -9,6 +10,7 @@ export default function Dashboard(){
   const [ loading, setLoading ] = useState(true); 
   const [ filter, setFilter ] = useState('all'); 
   const [ search, setSearch ] = useState(''); 
+  const [toast, setToast] = useState(null); 
 
   // call fetchScripts only the first time when the component loads 
   useEffect(() => {
@@ -47,8 +49,9 @@ export default function Dashboard(){
       }); 
       // create a brand new array and store all the scripts except for the one we delete
       setScripts(scripts.filter(s => s.id !== id)); 
+      setToast({ message: 'Script deleted', type: 'success' }); 
     } catch (err){
-      console.error('Failed to delete this script', err); 
+      setToast({ message: 'Failed to delete script', type: 'error' }); 
     }
   }
 
@@ -256,6 +259,13 @@ export default function Dashboard(){
           )}
         </main>
       </div>
+      {toast && (
+        <Toast 
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   ); 
 }

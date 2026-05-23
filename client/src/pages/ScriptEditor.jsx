@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'; 
 import { useNavigate, useParams } from 'react-router-dom'; 
 import { useAuth } from '../context/AuthContext'; 
+import Toast from '../components/Toast';
 
 export default function ScriptEditor(){
   const navigate = useNavigate(); 
@@ -29,6 +30,7 @@ export default function ScriptEditor(){
   const [saving, setSaving] = useState(false); 
   const [saved, setSaved] = useState(false); 
   const [error, setError] = useState(''); 
+  const [toast, setToast] = useState(null); 
 
   // render the corresponding script 
   useEffect(() => {
@@ -97,6 +99,7 @@ export default function ScriptEditor(){
 
       // set react state to saved
       setSaved(true); 
+      setToast({ message: 'Script saved successfully', type: 'success'}); 
       if (!isEditing){
         navigate(`/scripts/${data.id}`); 
       }
@@ -106,6 +109,14 @@ export default function ScriptEditor(){
       setSaving(false); 
     }
   }
+
+  // automatically expand textarea
+  useEffect(() => {
+    document.querySelectorAll('textarea').forEach(textarea => {
+      textarea.style.height = 'auto'
+      textarea.style.height = textarea.scrollHeight + 'px'
+    })
+  }, [form]); 
 
   // render this if loading
   if (loading) {
@@ -385,6 +396,13 @@ export default function ScriptEditor(){
 
         </div>
       </main>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   ); 
 }
