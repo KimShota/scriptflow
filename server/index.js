@@ -6,7 +6,6 @@ const scriptRoutes = require('./routes/scripts');
 const authRoutes = require('./routes/auth'); 
 const authMiddleware = require('./middleware/auth'); 
 const geminiRoutes = require('./routes/gemini')
-app.use('/api/gemini', geminiRoutes)
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -20,6 +19,7 @@ app.use('/api/auth', authRoutes);
 
 // protect routes with jwt authentication
 app.use('/api/scripts', authMiddleware, scriptRoutes); 
+app.use('/api/gemini', geminiRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'ScriptFlow API is running' });
