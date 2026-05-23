@@ -30,7 +30,7 @@ router.post('/correct', authMiddleware, async (req, res) =>{
             const prompt = `You are a grammar and flow editor. Your job is to correct ONLY grammar mistakes and improve the flow of the following text. Do NOT change the meaning, tone, style, or content. Do NOT add or remove ideas. Do NOT make it sound more formal or informal than the original. Only fix grammatical errors and awkward phrasing. Return ONLY the corrected text with no explanation, no preamble, and no additional commentary.
 
             Text to correct:
-            ${content}`
+            ${value}`
 
             // get the result from the model
             const result = await model.generateContent(prompt); 
