@@ -7,11 +7,12 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
   password  String
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
   scripts   Script[]
+  analyses  Analysis[]
 }
 
 model Script {
@@ -47,4 +48,53 @@ enum Status {
   draft
   ready
   posted
+}
+
+model Analysis {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+
+  // Creator info
+  creatorName  String
+  reelLink     String?
+  views        Int?
+
+  // Hook
+  hookTitle    String?
+  hookVisual   String?
+  hookVerbal   String?
+
+  // Content structure
+  storyArc     String?
+  pacing       Pacing?
+  cta          String?
+  format       String?
+  duration     String?
+
+  // Audio
+  audio        Audio?
+  audioCustom  String?
+
+  // Notes
+  notes        String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum Pacing {
+  fast
+  medium
+  slow
+}
+
+enum Audio {
+  mix
+  voiceover
+  trending_sounds
+  dialogue_bg_music
+  dialogue_only
+  no_voice
+  custom
 }
