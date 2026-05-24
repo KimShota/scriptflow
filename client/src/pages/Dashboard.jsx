@@ -146,6 +146,14 @@ export default function Dashboard(){
               <span className="material-symbols-outlined text-sm">description</span>
               All Scripts
             </a>
+            <a
+              onClick={() => navigate('/analysis')}
+              className="rounded-lg flex items-center gap-3 px-4 py-3 text-xs cursor-pointer hover:bg-gray-200 transition-colors"
+              style={{ color: '#45464d' }}
+            >
+              <span className="material-symbols-outlined text-sm">analytics</span>
+              Creator Analysis
+            </a>
           </nav>
         </aside>
 
