@@ -65,6 +65,54 @@ router.post('/', async (req, res) => {
     }
 }); 
 
+// POST endpoint to edit an analysis
+router.put('/:id', async (req, res) => {
+    try {
+        const {
+            creatorName,
+            reelLink,
+            views,
+            hookTitle,
+            hookVisual,
+            hookVerbal,
+            storyArc,
+            pacing,
+            cta,
+            format,
+            duration,
+            audio,
+            audioCustom,
+            notes
+        } = req.body; 
+
+        // update analysis stored in the database
+        const analysis = await prisma.analysis.update({
+            where: { id: parseInt(req.params.id) },
+            data: {
+                creatorName,
+                reelLink,
+                views: views ? parseInt(views.toString().replace(/[^0-9]/g, '')) : null,
+                hookTitle,
+                hookVisual,
+                hookVerbal,
+                storyArc,
+                pacing,
+                cta,
+                format,
+                duration,
+                audio,
+                audioCustom,
+                notes
+            }
+        }); 
+        res.json(analysis); 
+
+    } catch (error){
+        console.error(error); 
+        res.status(500).json({ error: 'Failed to edit analysis' }); 
+    }
+}); 
+
 // DELETE endpoint to delete an analysis 
 router.delete('/:id', async (req, res) => {
     try{

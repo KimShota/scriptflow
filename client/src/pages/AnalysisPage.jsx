@@ -36,6 +36,7 @@ export default function AnalysisPage(){
     const [pacingFilter, setPacingFilter] = useState('all')
     const [audioFilter, setAudioFilter] = useState('all')
     const [toast, setToast] = useState(null)
+    const [editingId, setEditingId] = useState(null); 
 
     // fetch all the analyses when component loads for the first time
     useEffect(() => {
@@ -65,20 +66,23 @@ export default function AnalysisPage(){
         setForm({ ...form, [e.target.name]: e.target.value }); 
     }
 
-    // function to save the change
+    // function to edit or save an analysis
     const handleSave = async () => {
-        // throw error if creator does not exist 
-        if (!form.creatorName.trim()){
+        if (!form.creatorName.trim()) {
             setToast({ message: 'Creator name is required', type: 'error' })
-            return; 
+            return
         }
-
         setSaving(true); 
-
+        
         try {
-            // send the user input to the analysis api with POST request
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/analysis`, {
-                method: 'POST',
+            // get the right URL (editing or saving)
+            const url = editingId
+                ? `${import.meta.env.VITE_API_URL}/api/analysis/${editingId}`
+                : `${import.meta.env.VITE_API_URL}/api/analysis`
+
+            // sent HTTP request to edit or save analysis
+            const res = await fetch(url, {
+                method: editingId ? 'PUT' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
@@ -90,19 +94,50 @@ export default function AnalysisPage(){
             }); 
 
             const data = await res.json(); 
-            if (!res.ok){
+            if (!res.ok) {
                 setToast({ message: data.error || 'Failed to save', type: 'error' }); 
                 return; 
             }
-            setAnalyses([data, ...analyses]); 
-            setForm(emptyForm); 
+
+            // edit or save
+            if (editingId) {
+                setAnalyses(analyses.map(a => a.id === editingId ? data : a)); 
+                setToast({ message: 'Analysis updated successfully', type: 'success' }); 
+            } else {
+                setAnalyses([data, ...analyses]); 
+                setToast({ message: 'Analysis saved successfully', type: 'success' }); 
+            }
+
+            setForm(emptyForm);
+            setEditingId(null);
             setPanelOpen(false); 
-            setToast({ message: 'Analysis saved successfully', type: 'success' }); 
-        } catch (error){
-            setToast({ message: 'Something went wrong', type: 'error' })
-        } finally{
+        } catch (err) {
+            setToast({ message: 'Something went wrong', type: 'error' }); 
+        } finally {
             setSaving(false); 
         }
+    }
+
+    // function to edit an analysis
+    const handleEdit = (analysis) => {
+        setEditingId(analysis.id); 
+        setForm({
+            creatorName: analysis.creatorName || '',
+            reelLink: analysis.reelLink || '',
+            views: analysis.views || '',
+            hookTitle: analysis.hookTitle || '',
+            hookVisual: analysis.hookVisual || '',
+            hookVerbal: analysis.hookVerbal || '',
+            storyArc: analysis.storyArc || '',
+            pacing: analysis.pacing || 'fast',
+            cta: analysis.cta || '',
+            format: analysis.format || '',
+            duration: analysis.duration || '',
+            audio: analysis.audio || 'voiceover',
+            audioCustom: analysis.audioCustom || '',
+            notes: analysis.notes || ''
+        }); 
+        setPanelOpen(true); 
     }
 
     // function to delete analysis
@@ -122,6 +157,13 @@ export default function AnalysisPage(){
         } catch (error){
             setToast({ message: 'Failed to delete', type: 'error' }); 
         }
+    }
+
+    // function to handle closing or opening panel
+    const handleClosePanel = () => {
+        setPanelOpen(false);
+        setEditingId(null);
+        setForm(emptyForm);
     }
 
     // function to filter analyses based on creators' name, pacing, or audio
@@ -285,6 +327,7 @@ export default function AnalysisPage(){
                   {filteredAnalyses.map((a, i) => (
                     <tr
                       key={a.id}
+                      onClick={() => handleEdit(a)}
                       className="border-b hover:bg-gray-50 transition-colors group"
                       style={{ borderColor: '#c6c6cd', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f7f9fb' }}
                     >
@@ -308,9 +351,12 @@ export default function AnalysisPage(){
                       <td className="px-4 py-3 text-sm max-w-[150px] truncate italic" style={{ color: '#76777d' }}>{a.notes || '-'}</td>
                       <td className="px-4 py-3">
                         <button
-                          onClick={() => handleDelete(a.id)}
-                          className="material-symbols-outlined opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all text-sm"
-                          style={{ color: '#45464d' }}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(a.id)
+                            }}
+                            className="material-symbols-outlined opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all text-sm"
+                            style={{ color: '#45464d' }}
                         >
                           delete
                         </button>
@@ -342,8 +388,10 @@ export default function AnalysisPage(){
         }}
       >
         <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: '#c6c6cd' }}>
-          <h2 className="text-lg font-semibold text-black">Add Analysis</h2>
-          <button onClick={() => setPanelOpen(false)} className="material-symbols-outlined hover:text-black transition-colors" style={{ color: '#45464d' }}>close</button>
+          <h2 className="text-lg font-semibold text-black">
+            {editingId ? 'Edit Analysis' : 'Add Analysis'}
+          </h2>
+          <button onClick={handleClosePanel} className="material-symbols-outlined hover:text-black transition-colors" style={{ color: '#45464d' }}>close</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -416,7 +464,7 @@ export default function AnalysisPage(){
         </div>
 
         <div className="p-6 border-t flex gap-3" style={{ borderColor: '#c6c6cd', backgroundColor: '#f2f4f6' }}>
-          <button onClick={() => setPanelOpen(false)} className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors" style={{ borderColor: '#c6c6cd', color: '#45464d' }}>Cancel</button>
+          <button onClick={handleClosePanel} className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors" style={{ borderColor: '#c6c6cd', color: '#45464d' }}>Cancel</button>
           <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Analysis'}
           </button>
