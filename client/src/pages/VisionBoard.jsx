@@ -47,14 +47,14 @@ function VisionNode({ data, selected }){
     // draw a node 
     return (
         <div
-        className="relative group rounded-lg shadow-sm"
-        style={{
-            backgroundColor: colors.bg,
-            border: `2px solid ${colors.border}`,
-            minWidth: data.isRoot ? '200px' : '180px',
-            maxWidth: '260px',
-            padding: '12px 16px'
-        }}
+            className="relative group rounded-lg shadow-sm"
+            style={{
+                backgroundColor: colors.bg,
+                border: `2px solid ${colors.border}`,
+                padding: '12px 16px',
+                width: '100%',
+                height: '100%'
+            }}
         >
             {/* Resizer */}
             <NodeResizer
@@ -63,6 +63,12 @@ function VisionNode({ data, selected }){
                 isVisible={selected}
                 lineStyle={{ border: '1px dashed #c4b5fd' }}
                 handleStyle={{ backgroundColor: '#7c3aed', width: '8px', height: '8px', borderRadius: '50%' }}
+                onResize={(event, params) => {
+                    data.onResize(data.id, params)
+                }}
+                onResizeEnd={(event, params) => {
+                    data.onResizeEnd(data.id, params)
+                }}
             />
 
             {/* Formatting Toolbar - shows on selection */}
@@ -262,14 +268,19 @@ function boardToFlow(boardData, handlers){
             type: 'visionNode', 
             position: node.position || pos,
             selected: false,
-            style: node.size ? { width: node.size.width, height: node.size.height } : {},
+            style: {
+                width: node.size?.width || (node.id === 'root' ? 200 : 180),
+                height: node.size?.height || 'auto'
+            },
             data: {
                 ...node,
                 isRoot: node.id === 'root',
                 onContentChange: handlers.onContentChange,
                 onDelete: handlers.onDelete,
                 onAddChild: handlers.onAddChild, 
-                onStyleChange: handlers.onStyleChange
+                onStyleChange: handlers.onStyleChange, 
+                onResize: handlers.onResize,
+                onResizeEnd: handlers.onResizeEnd
             }
         }); 
         node.children?.forEach(childId => {
@@ -442,6 +453,33 @@ export default function VisionBoard(){
                 autoSave(updated)
                 return updated
             })
+        }, 
+        onResize: (id, params) => {
+            setNodes(nds => nds.map(n => {
+                if (n.id !== id) return n
+                return {
+                    ...n,
+                    position: { x: params.x, y: params.y },
+                    style: { ...n.style, width: params.width, height: params.height }
+                }
+            }))
+        },
+        onResizeEnd: (id, params) => {
+            setBoardData(prev => {
+                const updated = {
+                    ...prev,
+                    nodes: {
+                        ...prev.nodes,
+                        [id]: {
+                        ...prev.nodes[id],
+                        position: { x: params.x, y: params.y },
+                        size: { width: params.width, height: params.height }
+                        }
+                    }
+                }
+                autoSave(updated)
+                return updated
+            })
         }
     }), [autoSave])
 
@@ -513,7 +551,6 @@ export default function VisionBoard(){
                     fitViewOptions={{ padding: 0.2 }}
                     snapToGrid={true}
                     snapGrid={[20, 20]}
-                    onNodeResizeEnd={onNodeResizeEnd}
                 >
                 <Background color="#e9d5ff" gap={24} size={1} />
                 <Controls />
