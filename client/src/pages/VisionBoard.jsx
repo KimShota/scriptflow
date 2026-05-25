@@ -9,7 +9,8 @@ import {
   useEdgesState,
   addEdge,
   Position,
-  Handle
+  Handle, 
+  NodeResizer
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import Toast from '../components/Toast'
@@ -21,9 +22,12 @@ const NODE_COLORS = {
   child: { bg: '#ffffff', text: '#1f2937', border: '#e9d5ff' }
 }
 
-function VisionNode({ data }){
+function VisionNode({ data, selected }){
     const [editing, setEditing] = useState(false); 
     const textareaRef = useRef(null); 
+    const [fontSize, setFontSize] = useState(data.fontSize || 14)
+    const [bold, setBold] = useState(data.bold || false)
+    const [textAlign, setTextAlign] = useState(data.textAlign || 'center')
 
     // focus when user is trying to edit 
     useEffect(() => {
@@ -52,6 +56,91 @@ function VisionNode({ data }){
             padding: '12px 16px'
         }}
         >
+            {/* Resizer */}
+            <NodeResizer
+                minWidth={150}
+                minHeight={80}
+                isVisible={selected}
+                lineStyle={{ border: '1px dashed #c4b5fd' }}
+                handleStyle={{ backgroundColor: '#7c3aed', width: '8px', height: '8px', borderRadius: '50%' }}
+            />
+
+            {/* Formatting Toolbar - shows on selection */}
+            {selected && (
+                <div
+                    className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 rounded-lg shadow-lg z-50"
+                    style={{ backgroundColor: '#1f2937', whiteSpace: 'nowrap' }}
+                    onMouseDown={e => e.stopPropagation()}
+                >
+                    {/* Font size */}
+                    <select
+                    value={fontSize}
+                    onChange={e => {
+                        const size = parseInt(e.target.value)
+                        setFontSize(size)
+                        data.onStyleChange(data.id, { fontSize: size, bold, textAlign })
+                    }}
+                    className="text-white text-xs rounded px-1 py-0.5"
+                    style={{ backgroundColor: '#374151', border: 'none' }}
+                    >
+                    {[10, 12, 14, 16, 18, 20, 24, 28, 32].map(s => (
+                        <option key={s} value={s}>{s}px</option>
+                    ))}
+                    </select>
+
+                    {/* Bold */}
+                    <button
+                    onClick={() => {
+                        const newBold = !bold
+                        setBold(newBold)
+                        data.onStyleChange(data.id, { fontSize, bold: newBold, textAlign })
+                    }}
+                    className="text-white text-xs px-2 py-0.5 rounded hover:bg-gray-600 transition-colors font-bold"
+                    style={{ backgroundColor: bold ? '#6d28d9' : 'transparent' }}
+                    >
+                    B
+                    </button>
+
+                    {/* Align left */}
+                    <button
+                    onClick={() => {
+                        setTextAlign('left')
+                        data.onStyleChange(data.id, { fontSize, bold, textAlign: 'left' })
+                    }}
+                    className="material-symbols-outlined text-white hover:bg-gray-600 rounded px-1"
+                    style={{ fontSize: '16px', backgroundColor: textAlign === 'left' ? '#6d28d9' : 'transparent' }}
+                    >
+                    format_align_left
+                    </button>
+
+                    {/* Align center */}
+                    <button
+                    onClick={() => {
+                        setTextAlign('center')
+                        data.onStyleChange(data.id, { fontSize, bold, textAlign: 'center' })
+                    }}
+                    className="material-symbols-outlined text-white hover:bg-gray-600 rounded px-1"
+                    style={{ fontSize: '16px', backgroundColor: textAlign === 'center' ? '#6d28d9' : 'transparent' }}
+                    >
+                    format_align_center
+                    </button>
+
+                    {/* Divider */}
+                    <div style={{ width: '1px', height: '20px', backgroundColor: '#4b5563' }} />
+
+                    {/* Delete */}
+                    {!data.locked && !data.isRoot && (
+                    <button
+                        onClick={() => data.onDelete(data.id)}
+                        className="material-symbols-outlined text-red-400 hover:text-red-300 px-1"
+                        style={{ fontSize: '16px' }}
+                    >
+                        delete
+                    </button>
+                    )}
+                </div>
+            )}
+
             <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
             {/* Label */}
@@ -92,23 +181,36 @@ function VisionNode({ data }){
                 <div onClick={() => setEditing(true)}>
                 {editing ? (
                     <textarea
-                    ref={textareaRef}
-                    value={data.content || ''}
-                    onChange={e => data.onContentChange(data.id, e.target.value)}
-                    onBlur={() => setEditing(false)}
-                    placeholder="Click to add notes..."
-                    rows={3}
-                    className="w-full text-sm resize-none focus:outline-none rounded p-1 text-center"
-                    style={{
-                        backgroundColor: 'rgba(255,255,255,0.7)',
-                        color: colors.text,
-                        border: '1px solid ' + colors.border
-                    }}
+                        ref={textareaRef}
+                        value={data.content || ''}
+                        onChange={e => data.onContentChange(data.id, e.target.value)}
+                        onBlur={() => setEditing(false)}
+                        placeholder="Click to add notes..."
+                        rows={3}
+                        className="w-full focus:outline-none rounded p-1"
+                        style={{
+                            backgroundColor: 'rgba(255,255,255,0.7)',
+                            color: colors.text,
+                            border: '1px solid ' + colors.border,
+                            resize: 'none',
+                            minHeight: '60px',
+                            fontSize: `${data.fontSize || 14}px`,
+                            fontWeight: data.bold ? '700' : '400',
+                            textAlign: data.textAlign || 'center'
+                        }}
                     />
                 ) : (
                     <p
-                    className="text-sm cursor-text min-h-[40px] text-center"
-                    style={{ color: data.content ? colors.text : '#a78bfa' }}
+                        className="cursor-text"
+                        style={{
+                            color: data.content ? colors.text : '#a78bfa',
+                            minHeight: '60px',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            fontSize: `${data.fontSize || 14}px`,
+                            fontWeight: data.bold ? '700' : '400',
+                            textAlign: data.textAlign || 'center'
+                        }}
                     >
                     {data.content || 'Click to add notes...'}
                     </p>
@@ -159,12 +261,15 @@ function boardToFlow(boardData, handlers){
             id: node.id, 
             type: 'visionNode', 
             position: node.position || pos,
+            selected: false,
+            style: node.size ? { width: node.size.width, height: node.size.height } : {},
             data: {
                 ...node,
                 isRoot: node.id === 'root',
                 onContentChange: handlers.onContentChange,
                 onDelete: handlers.onDelete,
-                onAddChild: handlers.onAddChild
+                onAddChild: handlers.onAddChild, 
+                onStyleChange: handlers.onStyleChange
             }
         }); 
         node.children?.forEach(childId => {
@@ -263,6 +368,24 @@ export default function VisionBoard(){
         saveTimer.current = setTimeout(() => saveBoard(data), 1500); 
     }, [saveBoard]); 
 
+    // function to save node size when resized
+    const onNodeResizeEnd = useCallback((event, node, params) => {
+    setBoardData(prev => {
+        const updated = {
+        ...prev,
+        nodes: {
+            ...prev.nodes,
+            [node.id]: {
+            ...prev.nodes[node.id],
+            size: { width: params.width, height: params.height }
+            }
+        }
+        }
+        autoSave(updated)
+        return updated
+    })
+    }, [autoSave])
+
     const handlers = useCallback(() => ({
         onContentChange: (id, value) => {
             setBoardData(prev => {
@@ -277,6 +400,19 @@ export default function VisionBoard(){
                 return updated
             })
         }, 
+        onStyleChange: (id, style) => {
+            setBoardData(prev => {
+                const updated = {
+                ...prev,
+                nodes: {
+                    ...prev.nodes,
+                    [id]: { ...prev.nodes[id], ...style }
+                }
+                }
+                autoSave(updated)
+                return updated
+            })
+        },
         onDelete: (id) => {
             if (!confirm('Delete this node?')) return
             setBoardData(prev => {
@@ -377,6 +513,7 @@ export default function VisionBoard(){
                     fitViewOptions={{ padding: 0.2 }}
                     snapToGrid={true}
                     snapGrid={[20, 20]}
+                    onNodeResizeEnd={onNodeResizeEnd}
                 >
                 <Background color="#e9d5ff" gap={24} size={1} />
                 <Controls />
