@@ -62,8 +62,33 @@ function VisionNode({ data }){
                 {data.label}
             </div>
 
+            {/* Fields - for nodes with multiple inputs */}
+            {data.fields && data.fields.length > 0 && (
+                <div className="space-y-2 mt-2">
+                    {data.fields.map((field) => (
+                        <div key={field}>
+                            <label className="block text-xs font-semibold mb-0.5 text-center" style={{ color: colors.text }}>
+                                {field}
+                            </label>
+                            <textarea
+                                value={(data.content?.[field]) || ''}
+                                onChange={e => data.onContentChange(data.id, { ...data.content, [field]: e.target.value })}
+                                placeholder={`Add ${field}...`}
+                                rows={2}
+                                className="w-full text-sm resize-none focus:outline-none rounded p-1 text-center"
+                                style={{
+                                    backgroundColor: 'rgba(255,255,255,0.7)',
+                                    color: colors.text,
+                                    border: '1px solid ' + colors.border
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {/* Content - only for non-locked nodes */}
-            {!data.locked && (
+            {!data.locked && !data.fields && (
                 <div onClick={() => setEditing(true)}>
                 {editing ? (
                     <textarea
@@ -342,14 +367,16 @@ export default function VisionBoard(){
             {/* Canvas */}
             <div style={{ width: '100%', flex: 1 }}>
                 <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onNodeDragStop={onNodeDragStop}
-                nodeTypes={nodeTypes}
-                fitView
-                fitViewOptions={{ padding: 0.2 }}
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onNodeDragStop={onNodeDragStop}
+                    nodeTypes={nodeTypes}
+                    fitView
+                    fitViewOptions={{ padding: 0.2 }}
+                    snapToGrid={true}
+                    snapGrid={[20, 20]}
                 >
                 <Background color="#e9d5ff" gap={24} size={1} />
                 <Controls />
