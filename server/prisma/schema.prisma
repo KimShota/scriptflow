@@ -7,12 +7,13 @@ datasource db {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  password  String
-  createdAt DateTime   @default(now())
-  scripts   Script[]
-  analyses  Analysis[]
+  id          Int          @id @default(autoincrement())
+  email       String       @unique
+  password    String
+  createdAt   DateTime     @default(now())
+  scripts     Script[]
+  analyses    Analysis[]
+  visionBoard VisionBoard?
 }
 
 model Script {
@@ -97,4 +98,13 @@ enum Audio {
   dialogue_only
   no_voice
   custom
+}
+
+model VisionBoard {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id])
+  data      Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }

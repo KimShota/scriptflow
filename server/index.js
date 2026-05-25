@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const authMiddleware = require('./middleware/auth'); 
 const geminiRoutes = require('./routes/gemini');
 const analysisRoutes = require('./routes/analysis'); 
+const visionRoutes = require('./routes/vision')
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/scripts', authMiddleware, scriptRoutes); 
 app.use('/api/gemini', authMiddleware, geminiRoutes)
 app.use('/api/analysis', authMiddleware, analysisRoutes)
+app.use('/api/vision', authMiddleware, visionRoutes); 
 
 app.get('/', (req, res) => {
   res.json({ message: 'ScriptFlow API is running' });

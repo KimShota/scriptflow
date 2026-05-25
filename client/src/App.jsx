@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard'; 
 import ScriptEditor from './pages/ScriptEditor'; 
 import AnalysisPage from './pages/AnalysisPage'
+import VisionBoard from "./pages/VisionBoard";
 
 // function to let authorized user into the component
 function ProtectedRoute({ children }){
@@ -30,6 +31,7 @@ function AppRoutes() {
       <Route path="/scripts/new" element={<ProtectedRoute><ScriptEditor /></ProtectedRoute>} />
       <Route path="/scripts/:id" element={<ProtectedRoute><ScriptEditor /></ProtectedRoute>} />
       <Route path="/analysis" element={<ProtectedRoute><AnalysisPage /></ProtectedRoute>} />
+      <Route path="/vision" element={<ProtectedRoute><VisionBoard /></ProtectedRoute>} />
     </Routes>
   )
 }
