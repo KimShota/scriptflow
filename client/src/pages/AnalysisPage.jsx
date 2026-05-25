@@ -37,6 +37,10 @@ export default function AnalysisPage(){
     const [audioFilter, setAudioFilter] = useState('all')
     const [toast, setToast] = useState(null)
     const [editingId, setEditingId] = useState(null); 
+    const [selectedIds, setSelectedIds] = useState([]); 
+    const [summary, setSummary] = useState(''); 
+    const [summarizing, setSummarizing] = useState(false); 
+    const [summaryOpen, setSummaryOpen] = useState(false); 
 
     // fetch all the analyses when component loads for the first time
     useEffect(() => {
@@ -206,6 +210,52 @@ export default function AnalysisPage(){
         return labels[audio] || audio; 
     }
 
+    // function to select analyses
+    const toggleSelect = (id, e) => {
+      // stop the event from bubbling up to the parent 
+      e.stopPropagation(); 
+      setSelectedIds(prev => 
+        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+      ); 
+    }
+
+    // function to select all analyses
+    const toggleSelectAll = () => {
+      if (selectedIds.length === filteredAnalyses.length) {
+        setSelectedIds([]); 
+      } else {
+        setSelectedIds(filteredAnalyses.map(a => a.id)); 
+      }
+    }
+
+    const handleSummarize = async () => {
+      // get all the selected analyses
+      const selectedAnalyses = analyses.filter(a => selectedIds.includes(a.id)); 
+      setSummarizing(true); 
+      try {
+        // send http request to summarize-analysis endpoint with post request 
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/gemini/summarize-analysis`, {
+          method: 'POST', 
+          headers: {
+            'Content-Type': 'application/json', 
+            Authorization: `Bearer ${token}`
+          }, 
+          body: JSON.stringify({ analyses: selectedAnalyses })
+        }); 
+        const data = await res.json(); 
+        if (!res.ok){
+          setToast({ message: data.error || 'Failed to summarize', type: 'error' }); 
+          return; 
+        }
+        setSummary(data.summary); 
+        setSummaryOpen(true); 
+      } catch (error){
+        setToast({ message: 'Something went wrong', type: 'error' }); 
+      } finally{
+        setSummarizing(false); 
+      }
+    }
+
     return (
     <div className="min-h-screen" style={{ backgroundColor: '#f7f9fb' }}>
 
@@ -293,6 +343,26 @@ export default function AnalysisPage(){
           </button>
         </div>
 
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-3 mb-4 px-4 py-3 bg-black text-white rounded-lg">
+            <span className="text-sm font-medium">{selectedIds.length} creator{selectedIds.length > 1 ? 's' : ''} selected</span>
+            <button
+              onClick={handleSummarize}
+              disabled={summarizing}
+              className="ml-auto flex items-center gap-2 bg-white text-black px-4 py-1.5 rounded font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-sm">auto_awesome</span>
+              {summarizing ? 'Summarizing...' : 'Summarize with AI'}
+            </button>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="material-symbols-outlined text-sm hover:opacity-70 transition-opacity"
+            >
+              close
+            </button>
+          </div>
+        )}
+
         {/* Empty State */}
         {!loading && filteredAnalyses.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 bg-white border rounded-xl text-center" style={{ borderColor: '#c6c6cd' }}>
@@ -318,6 +388,14 @@ export default function AnalysisPage(){
               <table className="w-full text-left border-collapse" style={{ minWidth: '1200px' }}>
                 <thead style={{ backgroundColor: '#f2f4f6' }}>
                   <tr className="border-b" style={{ borderColor: '#c6c6cd' }}>
+                    <th className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.length === filteredAnalyses.length && filteredAnalyses.length > 0}
+                        onChange={toggleSelectAll}
+                        className="cursor-pointer"
+                      />
+                    </th>
                     {['Creator', 'Views', 'Title Hook', 'Visual Hook', 'Verbal Hook', 'Story Arc', 'Pacing', 'CTA', 'Format', 'Duration', 'Audio', 'Notes', ''].map(h => (
                       <th key={h} className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#45464d' }}>{h}</th>
                     ))}
@@ -331,6 +409,15 @@ export default function AnalysisPage(){
                       className="border-b hover:bg-gray-50 transition-colors group"
                       style={{ borderColor: '#c6c6cd', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f7f9fb' }}
                     >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(a.id)}
+                          onChange={(e) => toggleSelect(a.id, e)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3 font-medium text-sm text-black">{a.creatorName}</td>
                       <td className="px-4 py-3 text-sm" style={{ color: '#45464d' }}>{formatViews(a.views)}</td>
                       <td className="px-4 py-3 text-sm max-w-[150px] truncate">{a.hookTitle || '-'}</td>
@@ -472,6 +559,79 @@ export default function AnalysisPage(){
       </aside>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {summaryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col mx-4">
+            <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: '#c6c6cd' }}>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-black">auto_awesome</span>
+                <h2 className="text-lg font-semibold text-black">AI Analysis Summary</h2>
+              </div>
+              <button
+                onClick={() => setSummaryOpen(false)}
+                className="material-symbols-outlined hover:text-black transition-colors"
+                style={{ color: '#45464d' }}
+              >
+                close
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-3">
+                {summary.split('\n').map((line, i) => {
+                  // heading with ###
+                  if (line.startsWith('### ')) {
+                    return (
+                      <h3 key={i} className="font-bold text-black text-base mt-6 mb-2 first:mt-0">
+                        {line.replace('### ', '')}
+                      </h3>
+                    )
+                  }
+                  // bold text with **text**
+                  if (line.startsWith('* **') || line.startsWith('- **')) {
+                    const content = line.replace(/^\* |^- /, '')
+                    const parts = content.split(/\*\*(.*?)\*\*/g)
+                    return (
+                      <p key={i} className="text-sm flex gap-2" style={{ color: '#191c1e' }}>
+                        <span className="text-black mt-0.5">•</span>
+                        <span>
+                          {parts.map((part, j) =>
+                            j % 2 === 1
+                              ? <strong key={j} className="font-semibold text-black">{part}</strong>
+                              : part
+                          )}
+                        </span>
+                      </p>
+                    )
+                  }
+                  // regular bullet
+                  if (line.startsWith('* ') || line.startsWith('- ')) {
+                    return (
+                      <p key={i} className="text-sm flex gap-2" style={{ color: '#191c1e' }}>
+                        <span className="text-black mt-0.5">•</span>
+                        <span>{line.replace(/^\* |^- /, '')}</span>
+                      </p>
+                    )
+                  }
+                  // empty line
+                  if (line.trim() === '') return null
+                  // regular paragraph
+                  return (
+                    <p key={i} className="text-sm" style={{ color: '#45464d' }}>{line}</p>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="p-6 border-t" style={{ borderColor: '#c6c6cd', backgroundColor: '#f2f4f6' }}>
+              <button
+                onClick={() => setSummaryOpen(false)}
+                className="w-full bg-black text-white py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   ); 
 }

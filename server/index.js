@@ -31,7 +31,7 @@ app.use('/api/auth', authRoutes);
 
 // protect routes with jwt authentication
 app.use('/api/scripts', authMiddleware, scriptRoutes); 
-app.use('/api/gemini', geminiRoutes)
+app.use('/api/gemini', authMiddleware, geminiRoutes)
 app.use('/api/analysis', authMiddleware, analysisRoutes)
 
 app.get('/', (req, res) => {

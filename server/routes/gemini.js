@@ -5,7 +5,7 @@ const authMiddleware = require('../middleware/auth')
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
-router.post('/correct', authMiddleware, async (req, res) => {
+router.post('/correct', async (req, res) => {
   try {
     const { fields } = req.body
 
@@ -50,5 +50,57 @@ ${fieldText}`
     res.status(500).json({ error: 'Failed to correct grammar', details: err.message })
   }
 })
+
+// POST endpoint to summarize chosen analyses
+router.post('/summarize-analysis', async (req, res) => {
+  try {
+    const { analyses } = req.body; 
+
+    if (!analyses || analyses.length === 0){
+      return res.status(400).json({ error: 'No analysis provided' });
+    }
+    
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' }); 
+
+    // combine analysis text for all the creators
+    const analysisText = analyses.map((a, i) => `
+      Creator ${i + 1}: ${a.creatorName}
+      Views: ${a.views || 'N/A'}
+      Title Hook: ${a.hookTitle || 'N/A'}
+      Visual Hook: ${a.hookVisual || 'N/A'}
+      Verbal Hook: ${a.hookVerbal || 'N/A'}
+      Story Arc: ${a.storyArc || 'N/A'}
+      Pacing: ${a.pacing || 'N/A'}
+      CTA: ${a.cta || 'N/A'}
+      Format: ${a.format || 'N/A'}
+      Duration: ${a.duration || 'N/A'}
+      Audio: ${a.audio || 'N/A'}
+      Notes: ${a.notes || 'N/A'}
+    `).join('\n---\n')
+
+    //create the prompt 
+    const prompt = `You are an expert short-form content strategist. Analyze the following creator data and provide actionable insights.
+
+    ${analysisText}
+
+    Please provide:
+    1. **Common Patterns** - What do these creators have in common?
+    2. **Hook Strategy** - What hook approaches are most common and effective?
+    3. **Pacing & Format** - What pacing and format trends do you notice?
+    4. **Audio Strategy** - What audio choices are most common?
+    5. **CTA Patterns** - What call-to-action approaches are used?
+    6. **Key Takeaways** - What are the top 3 things to implement in your own content?
+
+    Keep the response concise and actionable. Format with clear headings and bullet points.`
+
+    // generate content using the model
+    const result = await model.generateContent(prompt); 
+    const summary = result.response.text(); 
+    res.json({ summary }); 
+  } catch (error){
+    console.error(error); 
+    res.status(500).json({ error: 'Failed to summarize using gemini' }); 
+  }
+}); 
 
 module.exports = router
