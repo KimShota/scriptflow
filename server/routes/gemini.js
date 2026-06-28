@@ -13,7 +13,7 @@ router.post('/correct', async (req, res) => {
       return res.status(400).json({ error: 'No content provided' })
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' })
 
     // filter out empty fields
     const nonEmptyFields = Object.entries(fields).filter(([key, value]) => value && value.trim() !== '')
@@ -60,7 +60,7 @@ router.post('/summarize-analysis', async (req, res) => {
       return res.status(400).json({ error: 'No analysis provided' });
     }
     
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' }); 
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' }); 
 
     // combine analysis text for all the creators
     const analysisText = analyses.map((a, i) => `
