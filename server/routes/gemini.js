@@ -98,8 +98,8 @@ router.post('/summarize-analysis', async (req, res) => {
     const summary = result.response.text(); 
     res.json({ summary }); 
   } catch (error){
-    console.error(error); 
-    res.status(500).json({ error: 'Failed to summarize using gemini' }); 
+    console.error(error);
+    res.status(500).json({ error: 'Failed to summarize using gemini', details: error.message });
   }
 }); 
 
